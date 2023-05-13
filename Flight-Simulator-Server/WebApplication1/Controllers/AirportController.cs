@@ -19,10 +19,18 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("start")]
-        public IActionResult StartSimulator()
+        public async Task<IActionResult> StartSimulator()
         {
-            var list = airportService.StartSim();
+            var list = await airportService.StartSim();
             var flights = airport.Flights;
+            foreach (var flight in flights) 
+            {
+                Console.WriteLine($"flight - {flight.Id}");
+                foreach(var leg in flight.Road)
+                {
+                    Console.WriteLine($"    leg - {leg.Id}");
+                }
+            }
             return Ok();
         }
     }
