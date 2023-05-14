@@ -16,13 +16,9 @@ namespace WebApplication1.Services
     public class AirportService : IAirportService
     {
         private IAirport _airport;
-        private List<Flight> leg4Queue;
-        private List<Flight> leg6Or7Queue;
         public AirportService(IAirport airport)
         {
             _airport = airport;
-            leg4Queue = new List<Flight>();
-            leg6Or7Queue = new List<Flight>();
         }
         private Flight CreateRandomFlight()
         {
@@ -161,9 +157,13 @@ namespace WebApplication1.Services
             AddFlight();
             AddFlight();
             AddFlight();
+            AddFlight();
+            AddFlight();
+            AddFlight();
 
             var tasks = _airport.Flights.Select(flight => Task.Run(() => MakeFlight(flight)));
             await Task.WhenAll(tasks);
+
 
             Console.WriteLine("all flights ended");
             return _airport.Flights;
@@ -305,11 +305,17 @@ namespace WebApplication1.Services
                     await Task.Delay(1000);
                     nextLeg = GetNextPoint(flight);
                 } while (nextLeg != null);
-                Console.WriteLine($"flight-{flight.Id} || moved to no where");
-
+                flight.CurrentLeg.Item2.Airplanes.Remove(flight);
+                flight.CurrentLeg = null;
+                lock(Console.Out)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"flight-{flight.Id} || moved to no where");
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
             }
         }
-        private Tuple<Leg, Leg> MoveFlightToNextLeg(Flight flight)
+        private async Task<Tuple<Leg, Leg>> MoveFlightToNextLeg(Flight flight)
         {
             var nextLeg = GetNextPoint(flight);
             // Check if the flight is currently not on any leg
@@ -327,8 +333,13 @@ namespace WebApplication1.Services
                         // Add the flight to the airplanes list of the next leg
                         flight.CurrentLeg.Item2.Airplanes.Add(flight);
                         Console.WriteLine($"leg {nextLeg.Item2.Id} is ocupied by flight - {flight.Id} | at {DateTime.Now}");
-                        return nextLeg;
+                        Task.Run(async () =>
+                        {
+                            await Task.Delay(2000); // Wait for 2 seconds asynchronously
+                                                    // Code to execute after the delay
+                        }).Wait();
                     }
+                    return nextLeg;
                 }
                 // Update the current leg of the flight
                 flight.CurrentLeg = nextLeg;
@@ -342,7 +353,9 @@ namespace WebApplication1.Services
                     // Remove the flight from the airplanes list of the current leg
                     flight.CurrentLeg.Item2.Airplanes.Remove(flight);
                 }
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.Item2.Id} to no where");
+                Console.ForegroundColor = ConsoleColor.White;
                 flight.CurrentLeg = null;
                 return null;
             }
@@ -368,8 +381,13 @@ namespace WebApplication1.Services
                     // Add the flight to the airplanes list of the next leg
                     flight.CurrentLeg.Item2.Airplanes.Add(flight);
                     Console.WriteLine($"leg {nextLeg.Item2.Id} is ocupied by flight - {flight.Id} | at {DateTime.Now}");
-                    return nextLeg;
                 }
+                Task.Run(async () =>
+                {
+                    await Task.Delay(2000); // Wait for 2 seconds asynchronously
+                                            // Code to execute after the delay
+                }).Wait();
+                return nextLeg;
             }
             // Check if the current leg allows only one airplane at a time
             if (flight.CurrentLeg.Item2.ForOneAirplaneOnly) 
