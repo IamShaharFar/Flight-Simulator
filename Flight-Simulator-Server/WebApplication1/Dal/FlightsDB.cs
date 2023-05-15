@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.ObjectModel;
 using System.Configuration;
 using WebApplication1.Models;
 
@@ -11,7 +12,6 @@ namespace WebApplication1.Dal
 
         public FlightsDB(DbContextOptions<FlightsDB> options) : base(options)
         {
-
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

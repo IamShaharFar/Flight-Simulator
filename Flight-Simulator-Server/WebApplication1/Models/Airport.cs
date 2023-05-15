@@ -8,10 +8,10 @@ namespace WebApplication1.Models
         [Key]
         int Id { get; set; }
         string? Name { get; set; }
-        Collection<Leg>? Legs { get; set; }
-        Collection<Flight> Flights { get; set; }
-        Collection<Leg> LandingRoad { get; set; }
-        Collection<Leg> TakeoffRoad { get; set; }
+        List<Leg>? Legs { get; set; }
+        List<Flight> Flights { get; set; }
+        List<Leg> LandingRoad { get; set; }
+        List<Leg> TakeoffRoad { get; set; }
         Leg GetLeg(int id);
     }
     public class Airport : IAirport
@@ -19,39 +19,39 @@ namespace WebApplication1.Models
         [Key]
         public int Id { get; set; }
         public string? Name { get; set; }
-        public Collection<Leg>? Legs { get; set; } = new Collection<Leg> {
-            new Leg { Id = 1,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = false} ,
-            new Leg { Id = 2,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = false} ,
-            new Leg { Id = 3,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = false} ,
-            new Leg { Id = 4,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = true, WaitingList = new Collection<Flight>()} ,
-            new Leg { Id = 5,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = false} ,
-            new Leg { Id = 6,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = true, WaitingList = new Collection<Flight>()} ,
-            new Leg { Id = 7,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = true, WaitingList = new Collection <Flight>()} ,
-            new Leg { Id = 8,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = false} ,
-            new Leg { Id = 9,Airplanes = new Collection<Flight>(), ForOneAirplaneOnly = false} ,
+        public List<Leg>? Legs { get; set; } = new List<Leg> {
+            new Leg { Id = 1,Airplanes = new List<Flight>(), ForOneAirplaneOnly = false} ,
+            new Leg { Id = 2,Airplanes = new List<Flight>(), ForOneAirplaneOnly = false} ,
+            new Leg { Id = 3,Airplanes = new List<Flight>(), ForOneAirplaneOnly = false} ,
+            new Leg { Id = 4,Airplanes = new List<Flight>(), ForOneAirplaneOnly = true, WaitingList = new List<Flight>()} ,
+            new Leg { Id = 5,Airplanes = new List<Flight>(), ForOneAirplaneOnly = false} ,
+            new Leg { Id = 6,Airplanes = new List<Flight>(), ForOneAirplaneOnly = true, WaitingList = new List<Flight>()} ,
+            new Leg { Id = 7,Airplanes = new List<Flight>(), ForOneAirplaneOnly = true, WaitingList = new List <Flight>()} ,
+            new Leg { Id = 8,Airplanes = new List<Flight>(), ForOneAirplaneOnly = false} ,
+            new Leg { Id = 9,Airplanes = new List<Flight>(), ForOneAirplaneOnly = false} ,
         };
-        public Collection<Flight>? Flights { get; set; } = new Collection<Flight>();
-        public Collection<Leg> TakeoffRoad { get; set; }
-        public Collection<Leg> LandingRoad { get; set; }
+        public List<Flight>? Flights { get; set; } = new List<Flight>();
+        public List<Leg> TakeoffRoad { get; set; }
+        public List<Leg> LandingRoad { get; set; }
 
         public Airport()
         {
-            LandingRoad = new Collection<Leg>
+            LandingRoad = new List<Leg>
             {
                 GetLeg(1),
                 GetLeg(2),
                 GetLeg(3),
                 GetLeg(4),
                 GetLeg(5),
-                new MultyLeg { Id = 20,ForOneAirplaneOnly = false, Airplanes = new Collection<Flight>(), Stations = new Collection<Leg>
+                new MultyLeg { Id = 20,ForOneAirplaneOnly = false, Airplanes = new List<Flight>(), Stations = new List<Leg>
                 {
                 GetLeg(6),
                 GetLeg(7)
                 } }
             };
-            TakeoffRoad = new Collection<Leg>
+            TakeoffRoad = new List<Leg>
             {
-                new MultyLeg { Id = 21,ForOneAirplaneOnly = false, Airplanes = new Collection<Flight>(), Stations = new Collection<Leg>
+                new MultyLeg { Id = 21,ForOneAirplaneOnly = false, Airplanes = new List<Flight>(), Stations = new List<Leg>
                 {
                 GetLeg(6),
                 GetLeg(7)
