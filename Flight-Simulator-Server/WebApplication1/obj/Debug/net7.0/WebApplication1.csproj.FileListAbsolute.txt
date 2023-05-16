@@ -287,3 +287,4 @@ D:\Github-projects\Flight-Simulator\Flight-Simulator-Server\WebApplication1\bin\
 D:\Github-projects\Flight-Simulator\Flight-Simulator-Server\WebApplication1\bin\Debug\net7.0\runtimes\linux\native\libmongocrypt.so
 D:\Github-projects\Flight-Simulator\Flight-Simulator-Server\WebApplication1\bin\Debug\net7.0\runtimes\osx\native\libmongocrypt.dylib
 D:\Github-projects\Flight-Simulator\Flight-Simulator-Server\WebApplication1\bin\Debug\net7.0\runtimes\win\native\mongocrypt.dll
+D:\Github-projects\Flight-Simulator\Flight-Simulator-Server\WebApplication1\bin\Debug\net7.0\System.Net.WebSockets.WebSocketProtocol.dll

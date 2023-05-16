@@ -1,10 +1,12 @@
-﻿using Microsoft.CodeAnalysis.Elfie.Serialization;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using WebApplication1.Dal;
+using WebApplication1.Hubs;
 using WebApplication1.Models;
 
 namespace WebApplication1.Services
@@ -21,7 +23,8 @@ namespace WebApplication1.Services
         private IMongoCollection<Flight> _flights;
         private IMongoCollection<Leg> _legs;
         private IAirport _airport;
-        public AirportService(IMongoClient mongoClient)
+        private IHubContext<FlightHub> _flightHubContext;
+        public AirportService(IMongoClient mongoClient, IHubContext<FlightHub> flightHubContext)
         {
             if(_airport == null) _airport = new Airport();
             var db = mongoClient.GetDatabase("FlightSimulator");
@@ -31,6 +34,7 @@ namespace WebApplication1.Services
             {
                 _airport.Flights = _flights.AsQueryable().ToList();
             }
+            _flightHubContext = flightHubContext;
         }
         private Flight CreateRandomFlight()
         {
@@ -124,9 +128,6 @@ namespace WebApplication1.Services
             _airport = new Airport();
             Console.WriteLine("starting simulator");
             await AddFlight();
-            await AddFlight();
-            await AddFlight();
-            await AddFlight();
 
             var tasks = _airport.Flights.Select(flight => Task.Run(() => MakeFlight(flight)));
             await Task.WhenAll(tasks);
@@ -148,6 +149,7 @@ namespace WebApplication1.Services
                 {
                     // Move the flight to the next leg
                     MoveFlightToNextLeg(flight);
+                    await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
                     #region old
                     //if (flight.IsLanding)
                     //{                
@@ -274,6 +276,7 @@ namespace WebApplication1.Services
                 } while (nextLeg != null);
                 flight.CurrentLeg.SubLeg.Airplanes.Remove(flight);
                 flight.CurrentLeg = null;
+                await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", -1, flight.Id);
                 lock (Console.Out)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -326,6 +329,7 @@ namespace WebApplication1.Services
                                                     // Code to execute after the delay
                         }).Wait();
                     }
+                    //await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
                     return nextLegStation;
                 }
                 else if(next.ForOneAirplaneOnly)
@@ -356,6 +360,7 @@ namespace WebApplication1.Services
                 nextLegStation.SubLeg = nextLegStation.MultyLeg;
                 flight.CurrentLeg = nextLegStation;
                 await UpdateFlightToDb(flight);
+                //await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
                 return nextLegStation;
             }
             // Check if there is no next leg available
@@ -405,6 +410,7 @@ namespace WebApplication1.Services
                                                 // Code to execute after the delay
                     }).Wait();
                 }
+                //await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
                 return nextLegStation;
             }
             // Check if the current leg allows only one airplane at a time
@@ -459,6 +465,7 @@ namespace WebApplication1.Services
             flight.CurrentLeg = nextLegStation;
             await UpdateFlightToDb(flight);
             flight.CurrentLeg.SubLeg.Airplanes.Add(flight);
+            //await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
             return nextLegStation;
         }
         private async Task<Leg> WaitForMultyLegAsync(MultyLeg multyNext, Flight flight)
