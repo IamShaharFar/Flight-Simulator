@@ -30,6 +30,7 @@ namespace WebApplication1.Models
     public class MultyLeg : Leg, IMultyLeg
     {
         public List<Leg>? Stations { get; set; }
+        public List<Flight>? WaitForAll { get; set; } = new List<Flight> ();
     }
 
 
