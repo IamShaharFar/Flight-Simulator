@@ -12254,19 +12254,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\shaha\\.nuget\\packages\\": {}
+    "C:\\Users\\shaha\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Github-projects\\Flight-Simulator\\Flight-Simulator-Server\\WebApplication1\\WebApplication1.csproj",
+      "projectUniqueName": "C:\\GithubProjects\\Flight-simulat\\Flight-Simulator-Server\\WebApplication1\\WebApplication1.csproj",
       "projectName": "WebApplication1",
-      "projectPath": "D:\\Github-projects\\Flight-Simulator\\Flight-Simulator-Server\\WebApplication1\\WebApplication1.csproj",
+      "projectPath": "C:\\GithubProjects\\Flight-simulat\\Flight-Simulator-Server\\WebApplication1\\WebApplication1.csproj",
       "packagesPath": "C:\\Users\\shaha\\.nuget\\packages\\",
-      "outputPath": "D:\\Github-projects\\Flight-Simulator\\Flight-Simulator-Server\\WebApplication1\\obj\\",
+      "outputPath": "C:\\GithubProjects\\Flight-simulat\\Flight-Simulator-Server\\WebApplication1\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
         "C:\\Users\\shaha\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -12342,7 +12347,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.203\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.202\\RuntimeIdentifierGraph.json"
       }
     }
   }

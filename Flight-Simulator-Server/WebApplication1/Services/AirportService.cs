@@ -128,6 +128,8 @@ namespace WebApplication1.Services
             _airport = new Airport();
             Console.WriteLine("starting simulator");
             await AddFlight();
+            await AddFlight();
+            await AddFlight();
 
             var tasks = _airport.Flights.Select(flight => Task.Run(() => MakeFlight(flight)));
             await Task.WhenAll(tasks);
