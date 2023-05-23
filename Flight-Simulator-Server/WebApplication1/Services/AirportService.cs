@@ -15,7 +15,7 @@ namespace WebApplication1.Services
     public interface IAirportService
     {
         Task<List<Flight>> StartSim();
-        Task<Flight> AddFlight();
+        Flight AddFlight();
         Leg GetNextPoint(Flight flight);
 
     }
@@ -81,7 +81,7 @@ namespace WebApplication1.Services
 
             return flight;
         }
-        public async Task<Flight> AddFlight()
+        public Flight AddFlight()
         {
             // Create a new random flight
             Flight flight = CreateRandomFlight();
@@ -90,7 +90,7 @@ namespace WebApplication1.Services
                           .FirstOrDefault();
             flight.Id = maxIdFlight == null ? 1 : maxIdFlight.Id + 1;
             // Add the flight to the airport's flights collection
-            await _flights.InsertOneAsync(flight);
+            _flights.InsertOneAsync(flight);
             _airport.Flights.Add(flight);
 
             // Print information about the newly added flight
@@ -128,20 +128,20 @@ namespace WebApplication1.Services
             }
             _airport = new Airport();
             Console.WriteLine("starting simulator");
-            await AddFlight();
-            await AddFlight();
-            await AddFlight();
-
-            var tasks = _airport.Flights.Select(flight => Task.Run(() => MakeFlight(flight)));
-            for (int i = 0; i < 5; i++)
+            for(int i = 0; i < 6; i++)
             {
-                var flight = MakeFlight(CreateRandomFlight());
-                Thread.Sleep(3000);
+                Task.Run(() => MakeFlight(AddFlight()));
+                Thread.Sleep(1500);
             }
-            await Task.WhenAll(tasks);
+            //await AddFlight();
+            //await AddFlight();
+            //await AddFlight();
+
+            //var tasks = _airport.Flights.Select(flight => Task.Run(() => MakeFlight(flight)));
+            //await Task.WhenAll(tasks);
 
 
-            Console.WriteLine("all flights ended");
+            //Console.WriteLine("all flights ended");
             return _flights.AsQueryable().ToList();
             //todo: make a loop that each time make another flight with AddFlight()
         }
@@ -160,6 +160,7 @@ namespace WebApplication1.Services
                     Thread.Sleep(1000); 
                     nextLeg = GetNextPoint(flight);
                 } while (nextLeg != null);
+                UpdateCurrentLeg(flight, flight.CurrentLeg);
                 flight.CurrentLeg.SubLeg.Airplanes.Remove(flight);
                 flight.CurrentLeg = null;
                 await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", -1, flight.Id);

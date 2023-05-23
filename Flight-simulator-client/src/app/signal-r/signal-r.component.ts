@@ -34,7 +34,7 @@ export class SignalRComponent implements OnInit {
         if (!this.flights.some((flight) => flight.id == flightId)) {
           const newFlight: Flight = {
             id: flightId,
-            legId: nextLegId,
+            legs: [nextLegId],
           };
           flight = newFlight;
           this.flights.push(newFlight);
@@ -42,22 +42,33 @@ export class SignalRComponent implements OnInit {
           const updatedflight = this.flights.find(
             (flight) => flight.id === flightId
           );
+          if (nextLegId < 1 || nextLegId > 9) {
+            const endedFlight = updatedflight as Flight;
+            console.log('flight-' + endedFlight.id + ' has ended');
+            console.log('road-' + endedFlight.legs);
+          }
           if (updatedflight) {
-            const parentElement = this.orderedFlightsList[updatedflight.legId - 1];
+            const parentElement =
+              this.orderedFlightsList[
+                updatedflight.legs[updatedflight.legs.length - 1] - 1
+              ];
             const childElements = Array.from(parentElement.children);
-            const classToRemove = "flight-"+updatedflight.id;
-            childElements.forEach(child => {
+            const classToRemove = 'flight-' + updatedflight.id;
+            childElements.forEach((child) => {
               if (child.classList.contains(classToRemove)) {
                 parentElement.removeChild(child);
-              }});
-            updatedflight.legId = nextLegId;
+              }
+            });
+            updatedflight.legs.push(nextLegId);
           }
           flight = updatedflight as Flight;
         }
         const newSpan = document.createElement('span');
-        newSpan.classList.add("flight-"+flight.id);
-        newSpan.textContent = "flight id " + flight.id;
-        this.orderedFlightsList[flight.legId - 1].appendChild(newSpan);
+        newSpan.classList.add('flight-' + flight.id);
+        newSpan.textContent = 'flight id ' + flight.id;
+        this.orderedFlightsList[
+          flight.legs[flight.legs.length - 1] - 1
+        ].appendChild(newSpan);
       }
     );
   }
