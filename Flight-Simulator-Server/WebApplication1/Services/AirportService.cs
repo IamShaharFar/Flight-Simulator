@@ -17,6 +17,7 @@ namespace WebApplication1.Services
         Task<List<Flight>> StartSim();
         Flight AddFlight();
         Leg GetNextPoint(Flight flight);
+        Task MakeFlight(Flight flight);
 
     }
     public class AirportService : IAirportService
@@ -128,7 +129,7 @@ namespace WebApplication1.Services
             }
             _airport = new Airport();
             Console.WriteLine("starting simulator");
-            for(int i = 0; i < 6; i++)
+            for (int i = 0; i < 6; i++)
             {
                 Task.Run(() => MakeFlight(AddFlight()));
                 Thread.Sleep(1500);
@@ -156,8 +157,8 @@ namespace WebApplication1.Services
                 do
                 {
                     // Move the flight to the next leg
-                    await MoveFlightToNextLeg(flight);
-                    Thread.Sleep(1000); 
+                    MoveFlightToNextLeg(flight);
+                    Thread.Sleep(1000);
                     nextLeg = GetNextPoint(flight);
                 } while (nextLeg != null);
                 UpdateCurrentLeg(flight, flight.CurrentLeg);
@@ -187,45 +188,30 @@ namespace WebApplication1.Services
                 // Handle the update result if needed
             }
         }
-        private async Task<LegStation> MoveFlightToNextLeg(Flight flight)
+        private LegStation MoveFlightToNextLeg(Flight flight)
         {
             var next = GetNextPoint(flight);
             var nextLegStation = new LegStation { MultyLeg = next };
             // Check if the flight is currently not on any leg
-            if (flight.CurrentLeg == null)
-            {
-                // Check if the next leg is MultyLeg and allows only one airplane at a time
-                if (next is MultyLeg)
-                {
-                    return await MoveFlightToNextLegOnMultyLeg(flight, nextLegStation);
-                }
-                else if (next.ForOneAirplaneOnly)
-                {
-                    return await MoveFlightToNextLegForOneAirplaneOnly(flight, nextLegStation);
-                }
 
-                return await MoveFlightToNextLegDefault(flight, nextLegStation);
-            }
-            // Check if there is no next leg available
-            if (next == null)
-            {
-                return await MoveFlightToNoLeg(flight);
-            }
-            // Check if the next leg allows only one airplane at a time
+            // Check if the next leg is MultyLeg and allows only one airplane at a time
             if (next is MultyLeg)
             {
-                return await MoveFlightToNextLegOnMultyLeg(flight, nextLegStation);
+                return MoveFlightToNextLegOnMultyLeg(flight, nextLegStation);
             }
-            // Check if the current leg allows only one airplane at a time
             else if (next.ForOneAirplaneOnly)
             {
-                return await MoveFlightToNextLegForOneAirplaneOnly(flight, nextLegStation);
+                return MoveFlightToNextLegForOneAirplaneOnly(flight, nextLegStation);
+            }
+            else if (next == null)
+            {
+                return  MoveFlightToNoLeg(flight);
             }
 
+            return MoveFlightToNextLegDefault(flight, nextLegStation);
 
-            return await MoveFlightToNextLegDefault(flight, nextLegStation);
         }
-        private async Task<LegStation> MoveFlightToNextLegForOneAirplaneOnly(Flight flight, LegStation nextLegStation)
+        private LegStation MoveFlightToNextLegForOneAirplaneOnly(Flight flight, LegStation nextLegStation)
         {
             nextLegStation.SubLeg = nextLegStation.MultyLeg;
             WaitForLeg(nextLegStation.SubLeg, flight);
@@ -237,35 +223,38 @@ namespace WebApplication1.Services
                 }
                 else
                 {
+                    if (flight.CurrentLeg.SubLeg.ForOneAirplaneOnly)
+                    {
+                        Console.WriteLine($"leg-{nextLegStation.SubLeg.Id} is free by flight-{flight.Id}");
+                    }
                     Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to leg - {nextLegStation.SubLeg.Id}");
-                    Console.WriteLine($"leg-{nextLegStation.SubLeg.Id} is free by flight-{flight.Id}");
                 }
                 UpdateCurrentLeg(flight, nextLegStation);
                 AddFlightToAirplanesList(flight, flight.CurrentLeg.SubLeg);
                 Console.WriteLine($"leg {nextLegStation.SubLeg.Id} is occupied by flight - {flight.Id} | at {DateTime.Now}");
+                _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
+                DelayAndExecute(2000);
             }
-            await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
-            DelayAndExecute(2000);
             return nextLegStation;
         }
-        private async Task<LegStation> MoveFlightToNoLeg(Flight flight)
+        private LegStation MoveFlightToNoLeg(Flight flight)
         {
             lock (flight.CurrentLeg.SubLeg.Airplanes)
             {
                 flight.CurrentLeg.SubLeg.Airplanes.Remove(flight);
             }
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to nowhere");
             if (flight.CurrentLeg.SubLeg.ForOneAirplaneOnly)
             {
                 Console.WriteLine($"leg-{flight.CurrentLeg.SubLeg.Id} is free by flight-{flight.Id}");
             }
+            Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to nowhere");
             Console.ForegroundColor = ConsoleColor.White;
             flight.CurrentLeg = null;
-            await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
+            _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
             return null;
         }
-        private async Task<LegStation> MoveFlightToNextLegDefault(Flight flight, LegStation nextLegStation)
+        private LegStation MoveFlightToNextLegDefault(Flight flight, LegStation nextLegStation)
         {
             nextLegStation.SubLeg = nextLegStation.MultyLeg;
             if (flight.CurrentLeg == null)
@@ -274,20 +263,20 @@ namespace WebApplication1.Services
             }
             else
             {
-                Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to leg - {nextLegStation.SubLeg.Id}");
                 if (flight.CurrentLeg.SubLeg.ForOneAirplaneOnly)
                 {
                     Console.WriteLine($"leg-{flight.CurrentLeg.SubLeg.Id} is free by flight-{flight.Id}");
                 }
+                Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to leg - {nextLegStation.SubLeg.Id}");
             }
             UpdateCurrentLeg(flight, nextLegStation);
-            await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
+            _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
             return nextLegStation;
         }
-        private async Task<LegStation> MoveFlightToNextLegOnMultyLeg(Flight flight, LegStation nextLegStation)
+        private LegStation MoveFlightToNextLegOnMultyLeg(Flight flight, LegStation nextLegStation)
         {
             var multyNext = (MultyLeg)nextLegStation.MultyLeg;
-            Leg leg = await WaitForMultyLegAsync(multyNext, flight);
+            Leg leg = WaitForMultyLegAsync(multyNext, flight);
             lock (leg)
             {
                 nextLegStation.SubLeg = leg;
@@ -297,18 +286,18 @@ namespace WebApplication1.Services
                 }
                 else
                 {
-                    Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to leg - {nextLegStation.SubLeg.Id}");
                     if (flight.CurrentLeg.SubLeg.ForOneAirplaneOnly)
                     {
                         Console.WriteLine($"leg-{nextLegStation.SubLeg.Id} is free by flight-{flight.Id}");
                     }
+                    Console.WriteLine($"flight-{flight.Id} || moved from leg - {flight.CurrentLeg.SubLeg.Id} to leg - {nextLegStation.SubLeg.Id}");
                 }
                 UpdateCurrentLeg(flight, nextLegStation);
                 // Add the flight to the airplanes list of the next leg
                 AddFlightToAirplanesList(flight, flight.CurrentLeg.SubLeg);
                 Console.WriteLine($"leg {leg.Id} is ocupied by flight - {flight.Id} | at {DateTime.Now}");
             }
-            await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
+            _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
             DelayAndExecute(2000);
             //await _flightHubContext.Clients.All.SendAsync("SendNextLegAndFlightId", flight.CurrentLeg.SubLeg.Id, flight.Id);
             return nextLegStation;
@@ -321,11 +310,14 @@ namespace WebApplication1.Services
         {
             if (flight.CurrentLeg != null)
             {
-                if (flight.CurrentLeg.SubLeg.Airplanes.Contains(flight))
+                lock (flight.CurrentLeg.SubLeg.Airplanes)
                 {
-                    lock (flight.CurrentLeg.SubLeg.Airplanes)
+                    if (flight.CurrentLeg.SubLeg.Airplanes.Contains(flight))
                     {
-                        flight.CurrentLeg.SubLeg.Airplanes.Remove(flight);
+                        lock (flight.CurrentLeg.SubLeg.Airplanes)
+                        {
+                            flight.CurrentLeg.SubLeg.Airplanes.Remove(flight);
+                        }
                     }
                 }
 
@@ -340,7 +332,7 @@ namespace WebApplication1.Services
                 leg.Airplanes.Add(flight);
             }
         }
-        private async Task<Leg> WaitForMultyLegAsync(MultyLeg multyNext, Flight flight)
+        private Leg WaitForMultyLegAsync(MultyLeg multyNext, Flight flight)
         {
             multyNext.WaitForAll.Add(flight);
             Leg leg = null;
@@ -350,24 +342,27 @@ namespace WebApplication1.Services
                 {
                     if (l.Airplanes.Count == 0)
                     {
-                        if (multyNext.WaitForAll.FirstOrDefault() == flight)
+                        lock (l)
                         {
-                            lock (l)
+                            if (multyNext.WaitForAll.FirstOrDefault() == flight)
                             {
-                                l.Airplanes.Add(flight);
-                                multyNext.WaitForAll.Remove(flight);
+                                lock (l)
+                                {
+                                    l.Airplanes.Add(flight);
+                                    multyNext.WaitForAll.Remove(flight);
+                                }
+                                // Remove the flight from the waiting list and return
+                                return l;
                             }
-                            // Remove the flight from the waiting list and return
-                            return l;
                         }
                     }
 
                 }
-                if(!multyNext.WaitForAll.Contains(flight))
+                if (!multyNext.WaitForAll.Contains(flight))
                 {
                     multyNext.WaitForAll.Add(flight);
                 }
-                await Task.Delay(1000);
+                Task.Delay(1000);
             }
         }
         private void WaitForLeg(Leg leg, Flight flight)
@@ -376,23 +371,30 @@ namespace WebApplication1.Services
             leg.WaitingList.Add(flight);
             while (true)
             {
-                // Check if there are no airplanes currently on the leg
-                if (leg.Airplanes?.Count == 0)
+                lock (leg)
                 {
-                    // Check if the flight is the first one in the waiting list
-                    if (leg.WaitingList.FirstOrDefault() == flight)
+                    // Check if there are no airplanes currently on the leg
+                    if (leg.Airplanes?.Count == 0)
                     {
                         lock (leg)
                         {
-                            leg.Airplanes.Add(flight);
-                            leg.WaitingList.Remove(flight);
-                        }
-                        // Remove the flight from the waiting list and return
-                        return;
-                    }
+                            // Check if the flight is the first one in the waiting list
+                            if (leg.WaitingList.FirstOrDefault() == flight)
+                            {
+                                lock (leg)
+                                {
+                                    leg.Airplanes.Add(flight);
+                                    leg.WaitingList.Remove(flight);
+                                }
 
+                                // Remove the flight from the waiting list and return
+                                return;
+                            }
+                        }
+
+                    }
                 }
-                if(!leg.WaitingList.Contains(flight))
+                if (!leg.WaitingList.Contains(flight))
                 {
                     leg.WaitingList.Add(flight);
                 }
