@@ -1,4 +1,3 @@
-# Flight-Simulator
 <h1>Airport Simulator Project</h1>
 
   <p>The Airport Project is a web application that provides a server-client solution for managing airport operations.
